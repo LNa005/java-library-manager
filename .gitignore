@@ -1,0 +1,5 @@
+# Bases de datos locales
+*.db
+
+# Ejecutables y empaquetados
+*.jar

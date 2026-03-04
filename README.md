@@ -4,7 +4,7 @@ Aplicación de escritorio desarrollada en Java (Swing) para la gestión integral
 
 ## 🚀 Características Principales
 
-* **Autenticación Segura:** Sistema de acceso restringido mediante credenciales.
+* **Autenticación Segura:** Sistema de acceso restringido con cifrado unidireccional (Hashing) mediante algoritmo BCrypt con salting automático.
 * **Gestión de Inventario (CRUD):** Altas, bajas y consultas de libros en tiempo real.
 * **Control de Préstamos:** Registro del estado actual del libro y fechas de salida.
 * **Persistencia de Datos:** Almacenamiento local mediante una base de datos embebida (`biblioteca.db`).
@@ -18,34 +18,41 @@ El repositorio está organizado siguiendo estándares clásicos de desarrollo Ja
   * `Modelos:` `Libro.java`
   * `Vistas:` `VentanaBiblioteca.java`, `Login.java`
   * `Data Access:` `LibroDAO.java`, `UsuarioDAO.java`
-* `/lib`: Dependencias de terceros (Driver `sqlite-jdbc`).
+* `/lib`: Dependencias de terceros (Driver `sqlite-jdbc` y `jBcrypt`).
 * `/asset`: Recursos visuales y multimedia de la interfaz.
 
 ## 🛠️ Tecnologías y Requisitos
 
-* **Lenguaje:** Java (JDK 8 o superior recomendado)
+* **Lenguaje:** Java (JDK 8 o superior)
 * **Interfaz Gráfica:** Java Swing (UIManager del sistema nativo)
 * **Base de Datos:** SQLite 3
+* **Seguridad:** jBcrypt 0.4
 * **Control de Versiones:** Git
 
 ## ⚙️ Instalación y Ejecución
 
+### Entorno de Desarrollo
 1. Clonar el repositorio:
    ```bash
    git clone <URL_DEL_REPOSITORIO>
+Configurar el Build Path en tu IDE para incluir los archivos .jar ubicados en la carpeta /lib.
 
-2. Configurar el Build Path o Classpath en tu IDE (Eclipse, IntelliJ, VSCode) para incluir el archivo .jar ubicado en la carpeta /lib.
+Compilar el proyecto y ejecutar la clase principal Login.java.
 
-3. Compilar el proyecto y ejecutar la clase principal Login.java.
+Ejecución en Producción (Autónoma)
+El sistema puede ejecutarse de forma independiente sin necesidad de un IDE mediante su artefacto empaquetado (.jar):
 
-4. El sistema generará automáticamente la base de datos biblioteca.db y un usuario administrador por defecto (admin / 1234) en la primera ejecución.
+Abrir una terminal en el directorio donde se encuentre el archivo ejecutable.
+
+Lanzar la aplicación:
+
+Bash
+
+java -jar BibliotecaJava.jar
+Nota: En la primera ejecución, el sistema generará automáticamente la base de datos biblioteca.db y un usuario administrador por defecto (admin / 1234).
 
 ⚠️ Notas de Desarrollo
-El control de versiones excluye los archivos compilados (.class), los ejecutables y la base de datos local mediante .gitignore para mantener el repositorio limpio y proteger los datos en producción.
+El control de versiones excluye los archivos compilados (.class), los ejecutables empaquetados (.jar) y la base de datos local (.db) mediante .gitignore para mantener el repositorio limpio y proteger los datos en producción.
 
-🚧 Estado del Proyecto y Deuda Técnica (TODO)
-Este sistema se encuentra en fase de desarrollo iterativo. Actualmente existen mejoras arquitectónicas y parches de seguridad programados para las próximas versiones:
-
-[CRÍTICO] Seguridad de Autenticación: El sistema actual almacena credenciales en texto plano en la base de datos. Está programada la refactorización de la clase UsuarioDAO para implementar cifrado unidireccional (Hashing) mediante BCrypt o SHA-256.
-
-Distribución y Despliegue: Pendiente la configuración del empaquetado del proyecto y sus dependencias (driver de SQLite) en un artefacto ejecutable autónomo (.jar).
+🚧 Estado del Proyecto (TODO)
+[PENDIENTE] Refactorización y auditoría del módulo LibroDAO.java para optimizar las operaciones CRUD del inventario y mitigar posibles inyecciones SQL.

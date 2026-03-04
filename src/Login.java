@@ -6,10 +6,8 @@ public class Login extends JFrame {
     private UsuarioDAO usuarioDAO = new UsuarioDAO();
 
     public Login() {
-        // 1. Inicializar la seguridad (Crea tabla y admin si es la primera vez)
-        usuarioDAO.inicializarSeguridad();
-
-        // 2. Configuración de la ventana
+        // La inicialización de seguridad se ha movido al método main()
+        
         setTitle("Seguridad - Biblioteca v6.0");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -19,7 +17,6 @@ public class Login extends JFrame {
 
         try { setIconImage(new ImageIcon("icono.png").getImage()); } catch (Exception e) {}
 
-        // 3. Interfaz
         JLabel lblTitulo = new JLabel("ACCESO RESTRINGIDO");
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
@@ -49,7 +46,6 @@ public class Login extends JFrame {
         btnEntrar.setFont(new Font("Arial", Font.BOLD, 14));
         add(btnEntrar);
 
-        // 4. Lógica de seguridad delegada al DAO
         btnEntrar.addActionListener(e -> {
             String usuario = txtUser.getText().trim();
             String password = new String(txtPass.getPassword());
@@ -59,13 +55,18 @@ public class Login extends JFrame {
                 dispose(); 
             } else {
                 JOptionPane.showMessageDialog(this, "❌ Acceso Denegado\nUsuario o contraseña incorrectos.", "Error de Autenticación", JOptionPane.ERROR_MESSAGE);
-                txtPass.setText(""); // Limpiar campo de contraseña por seguridad
+                txtPass.setText(""); 
             }
         });
     }
 
     public static void main(String[] args) {
+        // 1. Inicializar la base de datos y la seguridad de forma centralizada
+        new UsuarioDAO().inicializarSeguridad();
+        
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) {}
-        new Login().setVisible(true);
+        
+        // 2. Levantar la interfaz gráfica
+        SwingUtilities.invokeLater(() -> new Login().setVisible(true));
     }
 }
