@@ -10,31 +10,25 @@ public class VentanaBiblioteca extends JFrame {
     private JTable tablaLibros;
     private JTextField txtTitulo, txtAutor, txtBuscador;
     
-    // Instancia de la capa de acceso a datos
     private LibroDAO libroDAO = new LibroDAO();
 
     public VentanaBiblioteca() {
-        // 1. Inicializar la base de datos a través del DAO
         libroDAO.crearTablaSiNoExiste();
 
-        // 2. Estética del sistema operativo
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
 
-        // 3. Configuración de la ventana principal
-        setTitle("Gestión Bibliotecaria SQL PRO - v5.2 (Refactorizada)");
+        setTitle("Gestión Bibliotecaria SQL PRO - v6.0 (Segura)");
         try { setIconImage(new ImageIcon("icono.png").getImage()); } catch (Exception e) {}
         setSize(950, 650);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Cierre directo y seguro
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // 4. Montaje de la interfaz
         JTabbedPane pestañas = new JTabbedPane();
         pestañas.addTab("📝 Registro Directo", crearPanelGestion());
         pestañas.addTab("📚 Inventario", crearPanelInventario());
         add(pestañas, BorderLayout.CENTER);
 
-        // 5. Carga inicial
         cargarDatosDesdeBD();
     }
 
@@ -79,23 +73,16 @@ public class VentanaBiblioteca extends JFrame {
                 return;
             }
 
-            for (Libro l : biblioteca) {
-                if (l.getTitulo().equalsIgnoreCase(titulo)) {
-                    JOptionPane.showMessageDialog(this, "El libro ya existe.");
-                    return;
-                }
-            }
-
             Libro nuevoLibro = new Libro(titulo, autor);
-            biblioteca.add(nuevoLibro);
-            
-            // Guardado individual delegado al DAO
             libroDAO.insertar(nuevoLibro); 
             
-            actualizarTabla(""); 
+            // Sincronización crítica: Recargar todo desde la BD para obtener el nuevo ID autogenerado
+            cargarDatosDesdeBD();
+            
             txtTitulo.setText("");
             txtAutor.setText("");
             txtTitulo.requestFocus();
+            JOptionPane.showMessageDialog(this, "✅ Libro registrado correctamente.");
         });
 
         panel.add(btnGuardar);
@@ -117,10 +104,16 @@ public class VentanaBiblioteca extends JFrame {
         topPanel.add(btnBuscar);
         panel.add(topPanel, BorderLayout.NORTH);
 
-        modeloTabla = new DefaultTableModel(new String[]{"Título", "Autor", "Estado", "Fecha"}, 0) {
+        // Modificación estructural: Se añade la columna ID
+        modeloTabla = new DefaultTableModel(new String[]{"ID", "Título", "Autor", "Estado", "Fecha"}, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
         tablaLibros = new JTable(modeloTabla);
+        
+        // Ajustar ancho de la columna ID
+        tablaLibros.getColumnModel().getColumn(0).setPreferredWidth(40);
+        tablaLibros.getColumnModel().getColumn(0).setMaxWidth(60);
+
         panel.add(new JScrollPane(tablaLibros), BorderLayout.CENTER);
 
         JPanel panelBotones = new JPanel();
@@ -132,7 +125,7 @@ public class VentanaBiblioteca extends JFrame {
             Libro l = obtenerLibroSeleccionado();
             if (l != null && !l.estaPrestado()) { 
                 l.prestar(); 
-                libroDAO.actualizarEstado(l); // Actualización en tiempo real
+                libroDAO.actualizarEstado(l); 
                 actualizarTabla(txtBuscador.getText()); 
             }
         });
@@ -141,7 +134,7 @@ public class VentanaBiblioteca extends JFrame {
             Libro l = obtenerLibroSeleccionado();
             if (l != null && l.estaPrestado()) { 
                 l.devolver(); 
-                libroDAO.actualizarEstado(l); // Actualización en tiempo real
+                libroDAO.actualizarEstado(l); 
                 actualizarTabla(txtBuscador.getText()); 
             }
         });
@@ -149,11 +142,11 @@ public class VentanaBiblioteca extends JFrame {
         btnEliminar.addActionListener(e -> {
             Libro l = obtenerLibroSeleccionado();
             if (l != null) { 
-                int resp = JOptionPane.showConfirmDialog(this, "¿Eliminar este libro de la base de datos?");
+                int resp = JOptionPane.showConfirmDialog(this, "¿Eliminar permanentemente el libro con ID " + l.getId() + "?", "Confirmar Eliminación", JOptionPane.YES_NO_OPTION);
                 if(resp == JOptionPane.YES_OPTION) {
-                    biblioteca.remove(l); 
-                    libroDAO.eliminar(l.getTitulo()); // Eliminación en tiempo real
-                    actualizarTabla(txtBuscador.getText()); 
+                    // Corrección: Envío del ID en lugar del Título
+                    libroDAO.eliminar(l.getId()); 
+                    cargarDatosDesdeBD();
                 }
             }
         });
@@ -170,9 +163,14 @@ public class VentanaBiblioteca extends JFrame {
         String f = filtro.toLowerCase();
         for (Libro libro : biblioteca) {
             if (filtro.isEmpty() || libro.getTitulo().toLowerCase().contains(f) || libro.getAutor().toLowerCase().contains(f)) {
-                modeloTabla.addRow(new Object[]{libro.getTitulo(), libro.getAutor(), 
+                // Modificación estructural: Se inserta el ID en la tabla
+                modeloTabla.addRow(new Object[]{
+                    libro.getId(), 
+                    libro.getTitulo(), 
+                    libro.getAutor(), 
                     libro.estaPrestado() ? "Prestado" : "Disponible", 
-                    libro.getFechaPrestamo() == null ? "" : libro.getFechaPrestamo().toString()});
+                    libro.getFechaPrestamo() == null ? "-" : libro.getFechaPrestamo().toString()
+                });
             }
         }
     }
@@ -180,11 +178,14 @@ public class VentanaBiblioteca extends JFrame {
     private Libro obtenerLibroSeleccionado() {
         int fila = tablaLibros.getSelectedRow();
         if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Selecciona un libro de la lista.");
+            JOptionPane.showMessageDialog(this, "Selecciona un libro de la lista.", "Atención", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        String tit = (String) modeloTabla.getValueAt(fila, 0);
-        for (Libro l : biblioteca) if (l.getTitulo().equals(tit)) return l;
+        // Corrección: Búsqueda exacta a través de la Primary Key (ID)
+        int idSeleccionado = (int) modeloTabla.getValueAt(fila, 0);
+        for (Libro l : biblioteca) {
+            if (l.getId() == idSeleccionado) return l;
+        }
         return null;
     }
 }

@@ -1,38 +1,38 @@
-import java.time.LocalDate; // Importante para manejar fechas
+import java.time.LocalDate;
 
 public class Libro {
+    private int id; // Mapeo de Primary Key
     private String titulo;
     private String autor;
     private boolean isPrestado;
-    private LocalDate fechaPrestamo; // NUEVO CAMPO
+    private LocalDate fechaPrestamo; 
 
     public Libro(String titulo, String autor) {
         this.titulo = titulo;
         this.autor = autor;
         this.isPrestado = false;
-        this.fechaPrestamo = null; // Al principio no tiene fecha
+        this.fechaPrestamo = null; 
     }
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getTitulo() { return titulo; }
     public String getAutor() { return autor; }
     public boolean estaPrestado() { return isPrestado; }
     
-    // Getter nuevo para la fecha
     public LocalDate getFechaPrestamo() { return fechaPrestamo; }
 
-    // Al prestar, guardamos la fecha de HOY
     public void prestar() { 
         this.isPrestado = true;
-        this.fechaPrestamo = LocalDate.now(); // Pone la fecha actual del sistema
+        this.fechaPrestamo = LocalDate.now(); 
     }
 
-    // Al devolver, borramos la fecha
     public void devolver() { 
         this.isPrestado = false;
         this.fechaPrestamo = null;
     }
     
-    // Si queremos forzar una fecha (útil para cargar datos)
     public void setFechaPrestamo(LocalDate fecha) {
         this.fechaPrestamo = fecha;
     }
@@ -40,6 +40,6 @@ public class Libro {
     @Override
     public String toString() {
         String estado = isPrestado ? "[PRESTADO el " + fechaPrestamo + "]" : "[DISPONIBLE]";
-        return estado + " - " + titulo + " (" + autor + ")";
+        return "ID: " + id + " | " + estado + " - " + titulo + " (" + autor + ")";
     }
 }
